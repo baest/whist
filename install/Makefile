@@ -4,9 +4,6 @@ MAINTAINER=	mk@bluepipe.dk
 COMMENT=	jin
 CATEGORIES=	www devel
 
-USE_PERL5 = 5.10+
-USE_APACHE=2.2
-
 RUN_DEPENDS = \
 		p5-File-Slurp>0:${PORTSDIR}/devel/p5-File-Slurp \
 		p5-JSON>0:${PORTSDIR}/converters/p5-JSON \
@@ -32,8 +29,7 @@ RUN_DEPENDS = \
 		p5-Text-MicroTemplate>0:${PORTSDIR}/textproc/p5-Text-MicroTemplate \
 		p5-Data-Printer>0:${PORTSDIR}/devel/p5-Data-Printer \
 		p5-Class-Load-XS>0:${PORTSDIR}/devel/p5-Class-Load-XS \
-		p5-Const-Fast>0:${PORTSDIR}/devel/p5-Const-Fast \
-		${LOCALBASE}/${APACHEMODDIR}/mod_perl.so:${PORTSDIR}/www/mod_perl2
+		p5-Const-Fast>0:${PORTSDIR}/devel/p5-Const-Fast
 
 # should be in core
 #		p5-File-Temp>0:${PORTSDIR}/devel/p5-File-Temp \

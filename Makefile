@@ -3,8 +3,7 @@ devel:
 	plackup -r -R ../lib whist.pl
 
 run:
-		./whist.pl daemon --reload
-#		hypnotoad f1bets.pl
+		starman whist.pl
 
 edit:
 	mvim whist.pl static/*/*.[cj]s* -c ':vsplit' -c ':wincmd w'

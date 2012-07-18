@@ -124,7 +124,7 @@ Ext.onReady(function(){
 							,	jacob: 0 
 							,	dorte: 0 
 							,	martin: 0 
-							, game_id: 1
+							,	game_id: 0
 							});
 
 							var num = store.getCount();

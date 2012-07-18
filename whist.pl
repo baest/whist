@@ -27,8 +27,6 @@ my $app = sub {
 	my $req = Plack::Request->new($env);
 	my $session = Plack::Session->new($env);
 
-	warn __PACKAGE__;
-
 	if (!$session->get('game')) {
 		my $id = get_db()->selectrow_array('SELECT max(id) FROM game');
 		$session->set('game', $id);
@@ -74,6 +72,8 @@ sub call_match {
 			$ret = $class->$sub($to_pass);
 		}
 		else {
+			$class //= caller;
+			$sub = $class->can($sub);
 			$ret = $sub->($to_pass);
 		}
 

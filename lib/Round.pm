@@ -65,7 +65,7 @@ sub insert {
 			$sql .= join(', ', map { '?' } @values) . ') RETURNING id';
 		}
 
-		warn $sql;
+#		warn $sql;
 
 		$row->{id} = $db->selectrow_array($sql, {}, @values);
 	}

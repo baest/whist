@@ -134,6 +134,40 @@ Ext.onReady(function(){
 						}
 					}
 				,	{
+						text: 'Beregn score'
+					,	handler : function() {
+							Ext.create('Ext.window.Window', {
+								title: 'Beregning'
+							,	bodyPadding: 5
+							,	height: 200
+							,	width: 400
+							,	layout: 'fit'
+							,	items: {  // Let's put an empty grid in just to illustrate fit layout
+									xtype: 'form'
+								,	border: false
+								,	layout: 'anchor'
+								,	defaultType: 'textfield'
+//								,	width: 390
+//								,	height: 190
+								,	defaults: {
+										anchor: '100%'
+								  }
+								,	url: 'xxx...'
+								,	items: [
+										{
+											fieldLabel: 'Melding'
+										,	name: 'melding_num'
+										}
+									,	{
+											fieldLabel: 'Melding'
+										,	name: 'melding_name'
+										}
+									]
+								}
+								}).show();
+						}
+					}
+				,	{
 						itemId: 'remove'
 					,	text: 'Slet'
 					,	handler: function() {

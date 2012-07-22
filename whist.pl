@@ -9,6 +9,7 @@ use File::Slurp 'slurp';
 use lib 'lib';
 use DBI;
 use utf8;
+use JSON;
 use Forward::Routes;
 use Class::Load 'load_class';
 
@@ -36,6 +37,8 @@ my $app = sub {
 
 	$routes->add_route('/favicon.ico')->to('#r404');
 
+	$routes->add_route('/service/new/game')->to('#new_game')->via('get');
+
 	$routes->add_route('/')->to('Index#default');
 	$routes->add_route('/service/round')->to('Round#insert')->via('post');
 	$routes->add_route('/service/round')->to('Round#get')->via('get');
@@ -52,6 +55,22 @@ sub r404 {
 	return [ 404, [ 'Content-Type' => 'text/plain' ], ['File not found'] ];
 }
 
+sub return_json {
+	my ($data) = @_;
+	return [ 200, [ 'Content-Type' => 'application/json', 'charset' => 'utf-8' ], [ encode_json($data) ] ];
+}
+
+sub new_game {
+	my ($args) = @_;
+
+	my $db = $args->{db};
+
+	my ($game_id) = $db->selectrow_array(' INSERT INTO game DEFAULT VALUES RETURNING id');
+
+	$args->{session}->set('game', $game_id);
+
+	return return_json({ game_id => $game_id});
+}
 
 sub call_match {
 	my ($req, $routes, $session, $db) = @_;

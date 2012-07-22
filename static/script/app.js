@@ -32,13 +32,27 @@ Ext.application({
 , models: [ 'whist.model.round' ]
 
 ,	launch: function() {
-    // Define our data model
-    // create the Data Store
-
     var rowEditing = Ext.create('Ext.grid.plugin.RowEditing', {
         clicksToMoveEditor: 1,
         autoCancel: false
     });
+
+		var get_checkbox_items = function (store_name, field_name, type_name) {
+			var items = []
+				, store = Ext.getStore(store_name)
+			;
+
+			if (!type_name)
+				type_name = 'name';
+
+			store.each(function(r) {
+				var name = r.get(type_name);
+
+				items.push({ boxLabel: name, name: field_name, inputValue: name});
+			});
+
+			return items;
+		}
 
     // create the grid and specify what field you want
     // to use for the editor at each column.
@@ -80,6 +94,27 @@ Ext.application({
 			,	frame: true
 			,	tbar: [
 					{
+						text: 'Nyt spil'
+					,	handler : function() {
+						Ext.Ajax.request({
+							url: '/service/new/game'
+						,	success: function(response){
+								var text = response.responseText
+									,	data = Ext.decode(text);
+								
+								whist_conf.game_id = data.game_id;
+							}
+						});
+						}
+					}
+				,	{
+						text: 'Refresh'
+					,	handler : function() {
+							var store = Ext.getStore('round');
+							store.load();
+						}
+					}
+				,	{
 						text: 'Tilføj resultat'
 					,	handler : function() {
 							var store = Ext.getStore('round');
@@ -92,7 +127,7 @@ Ext.application({
 							,	jacob: 0 
 							,	dorte: 0 
 							,	martin: 0 
-							,	game_id: 1 // value is just some value, game_id will be set by backend
+							,	game_id: whist_conf.game_id
 							});
 
 							var num = store.getCount();
@@ -107,56 +142,74 @@ Ext.application({
 							var mywin = Ext.create('Ext.window.Window', {
 								title: 'Beregning'
 							,	bodyPadding: 5
-							,	height: 200
-							,	width: 400
+//							,	height: 270
+							,	width: 300
 							,	layout: 'fit'
 							,	items: {
 									xtype: 'form'
 								,	border: false
 								,	layout: 'anchor'
 								,	defaultType: 'textfield'
-//								,	width: 390
-//								,	height: 190
 								,	defaults: {
 										anchor: '100%'
 								  }
 								,	items: [
 										{
 											fieldLabel: 'Melding'
+										,	itemId: 'melding_name'
 										,	name: 'melding_name'
-										,	xtype: 'combobox'
+										,	xtype: 'radiogroup'
 										,	allowBlank: false
-										,	queryMode: 'local'
-										,	valueField: 'name'
-										,	displayField: 'name'
-										,	store: 'melding'
+										,	vertical: true
+										,	columns: 1
+										,	items: get_checkbox_items('melding', 'melding_name')
+										,	listeners: {
+												change: function(field, new_value) {
+													var store = Ext.getStore('melding')
+														,	form = field.up('form')
+														,	is_sol = store.findRecord('name', new_value.melding_name).get('sol');
+
+													form.down('#overstik')[is_sol ? 'hide' : 'show']();
+													form.down('#melding_type')[is_sol ? 'hide' : 'show']();
+													form.down('#lost')[is_sol ? 'show' : 'hide']();
+
+												}
+											}
 										}
 									,	{
 											fieldLabel: 'Melding type'
 										,	name: 'melding_type'
-										,	xtype: 'combobox'
+										,	itemId: 'melding_type'
+										,	xtype: 'radiogroup'
 										,	allowBlank: true
-										,	queryMode: 'local'
-										,	valueField: 'name'
-										,	displayField: 'name'
-										,	store: 'melding_type'
+										,	vertical: true
+										,	columns: 1
+										,	items: get_checkbox_items('melding_type', 'melding_type')
 										}
 									,	{
 											fieldLabel: 'Meldere'
 										,	name: 'betters'
-										,	xtype: 'combobox'
+										,	xtype: 'checkboxgroup'
 										,	allowBlank: false
-										,	queryMode: 'local'
-										,	valueField: 'name'
-										,	displayField: 'name'
-										,	store: 'players'
-										,	multiSelect: true
+										,	vertical: true
+										,	columns: 1
+										,	items: get_checkbox_items('players', 'betters')
 										}
 									,	{
 											fieldLabel: 'Overstik'
+										,	itemId: 'overstik'
 										,	name: 'overstik'
-										, value: 0
+										,	value: 0
 										,	allowBlank: false
+										}
+									,	{
+											fieldLabel: 'Tabt'
+										,	itemId: 'lost'
+										,	name: 'lost'
+										,	value: 1
+										,	xtype: 'checkbox'
+										,	allowBlank: true
+										,	hidden: true
 										}
 									]
 									, buttons: [{
@@ -208,7 +261,7 @@ Ext.application({
 										var cost = final_multiplier * ((melding_cost * multiplier) + (overstik_price * Math.abs(overstik)));
 
 										var rec = {
-											game_id: 1 // value is just some value, game_id will be set by backend
+											game_id: whist_conf.game_id
 										};
 
 										players_store.each(function(r) {
@@ -308,18 +361,18 @@ Ext.define('whist.store.round', {
 
 Ext.define('whist.store.melding', {
 		extend: 'Ext.data.Store'
-	,	fields: ['name', 'cost']
+	,	fields: ['name', 'cost', 'sol']
 	,	data: [
-			{ name: '8', cost: 10 }
-		,	{ name: '9', cost: 30 }
-		,	{ name: 'Sol', cost: 50 }
-		,	{ name: '10', cost: 90 }
-		,	{ name: 'Ren sol', cost: 100 }
-		,	{ name: '11', cost: 250 }
-		,	{ name: 'På bord', cost: 300 }
-		,	{ name: '12', cost: 600 }
-		,	{ name: 'Ren bord', cost: 700 }
-		,	{ name: '13', cost: 1300 }
+			{ name: '8', cost: 10, sol: false }
+		,	{ name: '9', cost: 30, sol: false }
+		,	{ name: 'Sol', cost: 50, sol: true }
+		,	{ name: '10', cost: 90, sol: false }
+		,	{ name: 'Ren sol', cost: 100, sol: true }
+		,	{ name: '11', cost: 250, sol: false }
+		,	{ name: 'På bord', cost: 300, sol: true }
+		,	{ name: '12', cost: 600, sol: false }
+		,	{ name: 'Ren bord', cost: 700, sol: true }
+		,	{ name: '13', cost: 1300, sol: false }
 		]
 });
 

@@ -52,6 +52,23 @@ Ext.application({
 			});
 
 			return items;
+		};
+
+		var enable_disable_lost_items = function(lost_field, better_field) {
+			var betters = {};
+			Ext.Array.each(better_field.getChecked(), function(x) { 
+				betters[x.boxLabel] = 1;
+			});
+
+			lost_field.items.each(function(sub_field) { 
+				if (sub_field) {
+					var active = (sub_field.boxLabel in betters);
+					sub_field[(active) ? 'show' : 'hide']();
+
+					if (!active)
+						sub_field.setValue(false);
+				}
+			});
 		}
 
     // create the grid and specify what field you want
@@ -147,12 +164,18 @@ Ext.application({
 							,	layout: 'fit'
 							,	items: {
 									xtype: 'form'
+								,	id: 'beregning_form'
 								,	border: false
 								,	layout: 'anchor'
 								,	defaultType: 'textfield'
 								,	defaults: {
 										anchor: '100%'
 								  }
+								,	listeners: {
+										close: function (win) {
+											Ext.destroy(win);
+										}
+									}
 								,	items: [
 										{
 											fieldLabel: 'Melding'
@@ -172,7 +195,8 @@ Ext.application({
 													form.down('#overstik')[is_sol ? 'hide' : 'show']();
 													form.down('#melding_type')[is_sol ? 'hide' : 'show']();
 													form.down('#lost')[is_sol ? 'show' : 'hide']();
-
+													if (is_sol)
+														enable_disable_lost_items(form.down('#lost'), form.down('#betters'));
 												}
 											}
 										}
@@ -189,11 +213,30 @@ Ext.application({
 									,	{
 											fieldLabel: 'Meldere'
 										,	name: 'betters'
+										,	itemId: 'betters'
 										,	xtype: 'checkboxgroup'
 										,	allowBlank: false
 										,	vertical: true
 										,	columns: 1
 										,	items: get_checkbox_items('players', 'betters')
+										, listeners: {
+												change: function(field, new_value) {
+													var form = field.up('form')
+														,	values =  form.getValues();
+
+													if (!values.melding_name)
+														return;
+
+													var	store = Ext.getStore('melding')
+														,	is_sol = store.findRecord('name', values.melding_name).get('sol')
+													;
+
+													if (!is_sol)
+														return;
+
+													enable_disable_lost_items(form.down('#lost'), field);
+											 }
+											}
 										}
 									,	{
 											fieldLabel: 'Overstik'
@@ -207,9 +250,13 @@ Ext.application({
 										,	itemId: 'lost'
 										,	name: 'lost'
 										,	value: 1
-										,	xtype: 'checkbox'
+//										,	xtype: 'checkbox'
+										,	xtype: 'checkboxgroup'
 										,	allowBlank: true
 										,	hidden: true
+										,	vertical: true
+										,	columns: 1
+										,	items: get_checkbox_items('players', 'lost')
 										}
 									]
 									, buttons: [{
@@ -232,19 +279,23 @@ Ext.application({
 											,	overstik = parseInt(values.overstik)
 											, multiplier = 1
 											, final_multiplier = 1
+											,	overstik_price = melding_cost * .5
+											,	full_house = (13 == (parseInt(melding.get('name')) + overstik))
+											,	rec = {
+													game_id: whist_conf.game_id
+												}
 										;
+
+										console.debug(values);
 
 										if (!form.isValid())
 											return;
-
 
 										if ("melding_type" in values) {
 											var store = Ext.getStore('melding_type');
 											multiplier = store.findRecord('name', values.melding_type).get('multiplier');
 										}
 
-										var overstik_price = melding_cost * .5;
-										var full_house = (13 == (parseInt(melding.get('name')) + overstik));
 										//console.debug((parseInt(melding.get('name')) + overstik));
 										//console.debug(full_house);
 
@@ -253,19 +304,12 @@ Ext.application({
 											final_multiplier *= 2;
 										}
 
-										if (values.lost)
-											overstik = -1;
-
 										if (overstik < 0) {
 											overstik++; // last one only multiplies
 											final_multiplier *= -2;
 										}
 
 										var cost = final_multiplier * ((melding_cost * multiplier) + (overstik_price * Math.abs(overstik)));
-
-										var rec = {
-											game_id: whist_conf.game_id
-										};
 
 										players_store.each(function(r) {
 											var name = r.get('name')
@@ -293,6 +337,7 @@ Ext.application({
 										//console.debug(rec);
 
 										mywin.hide();
+										Ext.destroy(mywin);
 										return false;
 									}
 								}

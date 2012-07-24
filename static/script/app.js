@@ -253,6 +253,9 @@ Ext.application({
 											final_multiplier *= 2;
 										}
 
+										if (values.lost)
+											overstik = -1;
+
 										if (overstik < 0) {
 											overstik++; // last one only multiplies
 											final_multiplier *= -2;
